@@ -38,8 +38,11 @@ class SRT:
 
         self.is_booked = False  # 예약 완료 되었는지 확인용
         self.cnt_refresh = 0  # 새로고침 회수 기록
-
+        
         self.check_input()
+
+    def __del__(self):
+        self.driver.quit()
 
     def check_input(self):
         if self.dpt_stn not in station_list:
@@ -58,7 +61,9 @@ class SRT:
         self.login_psw = login_psw
 
     def run_driver(self):
-        self.driver = webdriver.Chrome()
+        options = webdriver.ChromeOptions()
+        options.add_argument("headless")
+        self.driver = webdriver.Chrome(options=options)
 
     def login(self):
         self.driver.get('https://etk.srail.co.kr/cmc/01/selectLoginForm.do')
