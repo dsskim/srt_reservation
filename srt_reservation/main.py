@@ -7,7 +7,7 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
-from selenium.common.exceptions import ElementClickInterceptedException, StaleElementReferenceException, WebDriverException
+from selenium.common.exceptions import ElementClickInterceptedException, StaleElementReferenceException, WebDriverException, UnexpectedAlertPresentException
 
 from srt_reservation.exceptions import InvalidStationNameError, InvalidDateError, InvalidDateFormatError, InvalidTimeFormatError
 from srt_reservation.validation import station_list
@@ -132,15 +132,23 @@ class SRT:
             finally:
                 self.driver.implicitly_wait(3)
 
+            
             # 예약이 성공하면
-            if self.driver.find_elements(By.ID, 'isFalseGotoMain'):
-                self.is_booked = True
-                print("예약 성공")
-                return self.driver
-            else:
-                print("잔여석 없음. 다시 검색")
-                self.driver.back()  # 뒤로가기
+            try:
+                elem = self.driver.find_elements(By.ID, 'isFalseGotoMain')
+            except UnexpectedAlertPresentException as e:
+                print(e)
+                self.driver.switch_to.alert.accept()
                 self.driver.implicitly_wait(5)
+            finally:
+                if self.driver.find_elements(By.ID, 'isFalseGotoMain'):
+                    self.is_booked = True
+                    print("예약 성공")
+                    return self.driver
+                else:
+                    print("잔여석 없음. 다시 검색")
+                    self.driver.back()  # 뒤로가기
+                    self.driver.implicitly_wait(5)
 
     def refresh_result(self):
         submit = self.driver.find_element(By.XPATH, "//input[@value='조회하기']")
