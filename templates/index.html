@@ -1,0 +1,414 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>SRT 예약 신청</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('index') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.login_id.label(class="form-label") }}
+                                {{ form.login_id(class="form-control") }}
+                                {% if form.login_id.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.login_id.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.login_psw.label(class="form-label") }}
+                                {{ form.login_psw(class="form-control") }}
+                                {% if form.login_psw.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.login_psw.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.dpt_stn.label(class="form-label") }}
+                                {{ form.dpt_stn(class="form-select") }}
+                                {% if form.dpt_stn.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.dpt_stn.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.arr_stn.label(class="form-label") }}
+                                {{ form.arr_stn(class="form-select") }}
+                                {% if form.arr_stn.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.arr_stn.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.dpt_dt.label(class="form-label") }}
+                                {{ form.dpt_dt(class="form-control", placeholder="예: 20230101") }}
+                                {% if form.dpt_dt.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.dpt_dt.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.dpt_tm.label(class="form-label") }}
+                                {{ form.dpt_tm(class="form-control", placeholder="예: 08") }}
+                                {% if form.dpt_tm.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.dpt_tm.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.num_trains_to_check.label(class="form-label") }}
+                                {{ form.num_trains_to_check(class="form-control") }}
+                                {% if form.num_trains_to_check.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.num_trains_to_check.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mt-4">
+                                <div class="form-check">
+                                    {{ form.want_reserve(class="form-check-input") }}
+                                    {{ form.want_reserve.label(class="form-check-label") }}
+                                </div>
+                                {% if form.want_reserve.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.want_reserve.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mt-4">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 예약 작업 목록 -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3>예약 작업 목록</h3>
+                <button id="refresh-tasks" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-clockwise"></i> 새로고침
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="tasks-table">
+                        <thead>
+                            <tr>
+                                <th>생성 시간</th>
+                                <th>출발역</th>
+                                <th>도착역</th>
+                                <th>출발일</th>
+                                <th>출발시간</th>
+                                <th>상태</th>
+                                <th>새로고침</th>
+                                <th>작업</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task_id, task in tasks.items() %}
+                            <tr data-task-id="{{ task_id }}" class="{% if task.is_booked %}table-success{% elif task.is_running %}table-primary{% elif 'error' in task.message.lower() or '오류' in task.message %}table-danger{% endif %}">
+                                <td>{{ task.created_at }}</td>
+                                <td>{{ task.dpt_stn }}</td>
+                                <td>{{ task.arr_stn }}</td>
+                                <td>{{ task.dpt_dt[:4] }}-{{ task.dpt_dt[4:6] }}-{{ task.dpt_dt[6:] }}</td>
+                                <td>{{ task.dpt_tm }}:00</td>
+                                <td class="task-status">{{ task.message }}</td>
+                                <td class="task-refresh-count">{{ task.refresh_count }}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{{ url_for('status', task_id=task_id) }}" class="btn btn-sm btn-info">상세</a>
+                                        {% if task.is_running %}
+                                        <button class="btn btn-sm btn-warning cancel-btn" data-task-id="{{ task_id }}">취소</button>
+                                        {% else %}
+                                        <button class="btn btn-sm btn-success restart-btn" data-task-id="{{ task_id }}">재시작</button>
+                                        {% endif %}
+                                        <button class="btn btn-sm btn-danger delete-btn" data-task-id="{{ task_id }}">삭제</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center">예약 작업이 없습니다.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 비밀번호 입력 모달 -->
+<div class="modal fade" id="passwordModal" tabindex="-1" aria-labelledby="passwordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="passwordModalLabel">비밀번호 입력</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>작업을 재시작하려면 SRT 계정 비밀번호를 입력해주세요.</p>
+                <div class="form-group">
+                    <label for="password" class="form-label">비밀번호</label>
+                    <input type="password" class="form-control" id="password" required>
+                </div>
+                <input type="hidden" id="restart-task-id" value="">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" id="confirm-restart">재시작</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 작업 상태 업데이트 함수
+    function updateTasksStatus() {
+        fetch('{{ url_for("api_tasks") }}')
+            .then(response => response.json())
+            .then(tasks => {
+                const tableBody = document.querySelector('#tasks-table tbody');
+                
+                // 테이블에 있는 모든 행 확인
+                document.querySelectorAll('#tasks-table tbody tr[data-task-id]').forEach(row => {
+                    const taskId = row.getAttribute('data-task-id');
+                    
+                    // 해당 작업이 API 응답에 있는지 확인
+                    if (tasks[taskId]) {
+                        const task = tasks[taskId];
+                        
+                        // 상태 업데이트
+                        row.querySelector('.task-status').textContent = task.message;
+                        row.querySelector('.task-refresh-count').textContent = task.refresh_count;
+                        
+                        // 행 스타일 업데이트
+                        row.className = '';
+                        if (task.is_booked) {
+                            row.classList.add('table-success');
+                        } else if (task.is_running) {
+                            row.classList.add('table-primary');
+                        } else if (task.message.toLowerCase().includes('error') || task.message.includes('오류')) {
+                            row.classList.add('table-danger');
+                        }
+                        
+                        // 버튼 업데이트
+                        const btnGroup = row.querySelector('.btn-group');
+                        const cancelBtn = btnGroup.querySelector('.cancel-btn');
+                        const restartBtn = btnGroup.querySelector('.restart-btn');
+                        
+                        if (task.is_running) {
+                            if (!cancelBtn) {
+                                // 취소 버튼 추가
+                                const newCancelBtn = document.createElement('button');
+                                newCancelBtn.className = 'btn btn-sm btn-warning cancel-btn';
+                                newCancelBtn.setAttribute('data-task-id', taskId);
+                                newCancelBtn.textContent = '취소';
+                                newCancelBtn.addEventListener('click', cancelTask);
+                                
+                                if (restartBtn) {
+                                    btnGroup.replaceChild(newCancelBtn, restartBtn);
+                                } else {
+                                    btnGroup.insertBefore(newCancelBtn, btnGroup.querySelector('.delete-btn'));
+                                }
+                            }
+                        } else {
+                            if (!restartBtn) {
+                                // 재시작 버튼 추가
+                                const newRestartBtn = document.createElement('button');
+                                newRestartBtn.className = 'btn btn-sm btn-success restart-btn';
+                                newRestartBtn.setAttribute('data-task-id', taskId);
+                                newRestartBtn.textContent = '재시작';
+                                newRestartBtn.addEventListener('click', restartTask);
+                                
+                                if (cancelBtn) {
+                                    btnGroup.replaceChild(newRestartBtn, cancelBtn);
+                                } else {
+                                    btnGroup.insertBefore(newRestartBtn, btnGroup.querySelector('.delete-btn'));
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+    }
+    
+    // 작업 취소 함수
+    function cancelTask(event) {
+        const taskId = event.target.getAttribute('data-task-id');
+        
+        if (confirm('정말로 이 예약 작업을 취소하시겠습니까?')) {
+            fetch(`{{ url_for('cancel_task', task_id='TASK_ID') }}`.replace('TASK_ID', taskId), {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateTasksStatus();
+                } else {
+                    alert('작업 취소 중 오류가 발생했습니다: ' + data.message);
+                }
+            });
+        }
+    }
+    
+    // 작업 재시작 함수
+    function restartTask(event) {
+        const taskId = event.target.getAttribute('data-task-id');
+        
+        // 모달에 작업 ID 설정
+        document.getElementById('restart-task-id').value = taskId;
+        
+        // 모달 표시
+        const passwordModal = new bootstrap.Modal(document.getElementById('passwordModal'));
+        passwordModal.show();
+    }
+    
+    // 작업 삭제 함수
+    function deleteTask(event) {
+        const taskId = event.target.getAttribute('data-task-id');
+        
+        if (confirm('정말로 이 예약 작업을 삭제하시겠습니까?')) {
+            fetch(`{{ url_for('delete_task', task_id='TASK_ID') }}`.replace('TASK_ID', taskId), {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 행 제거
+                    document.querySelector(`tr[data-task-id="${taskId}"]`).remove();
+                    
+                    // 테이블이 비어있는지 확인
+                    if (document.querySelectorAll('#tasks-table tbody tr[data-task-id]').length === 0) {
+                        const tableBody = document.querySelector('#tasks-table tbody');
+                        const emptyRow = document.createElement('tr');
+                        emptyRow.innerHTML = '<td colspan="8" class="text-center">예약 작업이 없습니다.</td>';
+                        tableBody.appendChild(emptyRow);
+                    }
+                } else {
+                    alert('작업 삭제 중 오류가 발생했습니다: ' + data.message);
+                }
+            });
+        }
+    }
+    
+    // 재시작 확인 버튼 클릭 이벤트
+    document.getElementById('confirm-restart').addEventListener('click', function() {
+        const taskId = document.getElementById('restart-task-id').value;
+        const password = document.getElementById('password').value;
+        
+        if (!password) {
+            alert('비밀번호를 입력해주세요.');
+            return;
+        }
+        
+        fetch(`{{ url_for('do_restart_task', task_id='TASK_ID') }}`.replace('TASK_ID', taskId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                password: password
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 모달 닫기
+                bootstrap.Modal.getInstance(document.getElementById('passwordModal')).hide();
+                
+                // 비밀번호 초기화
+                document.getElementById('password').value = '';
+                
+                // 상태 업데이트
+                updateTasksStatus();
+            } else {
+                alert('작업 재시작 중 오류가 발생했습니다: ' + data.message);
+            }
+        });
+    });
+    
+    // 새로고침 버튼 클릭 이벤트
+    document.getElementById('refresh-tasks').addEventListener('click', function() {
+        updateTasksStatus();
+    });
+    
+    // 이벤트 리스너 등록
+    document.querySelectorAll('.cancel-btn').forEach(btn => {
+        btn.addEventListener('click', cancelTask);
+    });
+    
+    document.querySelectorAll('.restart-btn').forEach(btn => {
+        btn.addEventListener('click', restartTask);
+    });
+    
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', deleteTask);
+    });
+    
+    // 5초마다 상태 업데이트
+    setInterval(updateTasksStatus, 5000);
+</script>
+{% endblock %} 

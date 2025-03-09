@@ -1,0 +1,77 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2 class="mb-4">예약 상태 상세</h2>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>예약 정보</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>아이디:</strong> {{ task.login_id }}</p>
+                        <p><strong>출발역:</strong> {{ task.dpt_stn }}</p>
+                        <p><strong>도착역:</strong> {{ task.arr_stn }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>출발일:</strong> {{ task.dpt_dt[:4] }}-{{ task.dpt_dt[4:6] }}-{{ task.dpt_dt[6:] }}</p>
+                        <p><strong>출발시간:</strong> {{ task.dpt_tm }}:00</p>
+                        <p><strong>생성시간:</strong> {{ task.created_at }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status-box {% if task.is_running %}status-running{% elif task.is_booked %}status-success{% elif 'error' in task.message.lower() or '오류' in task.message %}status-error{% endif %}">
+            <h4>상태 메시지</h4>
+            <p id="status-message">{{ task.message }}</p>
+            
+            {% if task.is_running %}
+                <div class="d-flex align-items-center mt-3">
+                    <div class="spinner-border text-primary me-2" role="status">
+                        <span class="visually-hidden">로딩 중...</span>
+                    </div>
+                    <span>진행 중... 새로고침 횟수: <span id="refresh-count">{{ task.refresh_count }}</span></span>
+                </div>
+            {% elif task.is_booked %}
+                <div class="alert alert-success mt-3">
+                    <strong>성공!</strong> 예약이 완료되었습니다.
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="mt-4">
+            <div class="btn-group">
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">메인 페이지로 돌아가기</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    {% if task.is_running %}
+    // 상태 업데이트를 위한 AJAX 호출
+    function updateStatus() {
+        fetch('{{ url_for("api_status") }}')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('status-message').textContent = data.message;
+                document.getElementById('refresh-count').textContent = data.refresh_count;
+                
+                // 상태 변경 시 페이지 새로고침
+                if (!data.is_running) {
+                    location.reload();
+                }
+            });
+    }
+    
+    // 3초마다 상태 업데이트
+    setInterval(updateStatus, 3000);
+    {% endif %}
+</script>
+{% endblock %} 
