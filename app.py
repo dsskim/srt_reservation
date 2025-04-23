@@ -318,4 +318,4 @@ if __name__ == '__main__':
     # 저장된 작업 로드
     load_tasks()
     
-    app.run(debug=True) 
+    app.run(debug=True, host='0.0.0.0', port=5000) 
